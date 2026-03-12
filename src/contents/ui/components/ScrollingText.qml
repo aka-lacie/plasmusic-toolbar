@@ -56,9 +56,15 @@ Item {
     property int textAlignment: Qt.AlignHCenter
 
     implicitWidth: overflow ? maxWidth : textMetrics.width
-    clip: overflow 
+    implicitHeight: Math.ceil(fontMetric.height)
+    clip: overflow
 
-    Layout.preferredHeight: label.implicitHeight
+    Layout.preferredHeight: implicitHeight
+
+    FontMetrics {
+        id: fontMetric
+        font: label.font
+    }
     Layout.fillWidth: true
 
     HoverHandler {

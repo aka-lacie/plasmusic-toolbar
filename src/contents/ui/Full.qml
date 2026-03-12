@@ -122,57 +122,129 @@ Item {
         Kirigami.Theme.textColor: albumCoverBackground ? imageColors.fgColor : root._originalTextColor
         Kirigami.Theme.highlightColor: albumCoverBackground ? imageColors.hlColor : root._originalHighlightColor
 
-        RowLayout {
+        Item {
             id: playerSelector
             visible: playerSelectorVisible
             Layout.alignment: Qt.AlignHCenter
             Layout.topMargin: 4
             Layout.bottomMargin: 4
-            spacing: Kirigami.Units.smallSpacing
+            implicitWidth: playerRow.implicitWidth
+            implicitHeight: playerRow.implicitHeight
 
-            Repeater {
-                model: player.mpris2Model
-                delegate: Item {
-                    required property string iconName
-                    required property bool isMultiplexer
-                    required property string identity
-                    required property int index
-                    visible: !isMultiplexer
-                    implicitWidth: isMultiplexer ? 0 : playerIcon.width + 10
-                    implicitHeight: isMultiplexer ? 0 : playerIcon.height + 10
+            // Sliding highlight with stretch effect
+            Rectangle {
+                id: highlight
+                height: parent.height
+                radius: Kirigami.Units.cornerRadius
+                color: Kirigami.Theme.textColor
+                opacity: 0.15
+                visible: activeButton !== null
+                x: leftEdge
+                width: Math.max(0, rightEdge - leftEdge)
 
-                    readonly property bool active: player.currentModelIndex === index
-                        || (player.currentModelIndex === 0 && player.identity === identity)
+                readonly property int leadDuration: 250
+                readonly property int trailDelay: 80
+                readonly property int trailDuration: leadDuration - trailDelay
 
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: Kirigami.Units.cornerRadius
-                        color: "transparent"
-                        border.width: parent.active ? 1 : (hoverArea.containsMouse ? 1 : 0)
-                        border.color: Kirigami.Theme.textColor
-                        opacity: parent.active ? 0.8 : 0.4
+                property Item activeButton: playerRepeater.activeItem
+                property real targetLeft: activeButton ? activeButton.x : 0
+                property real targetRight: activeButton ? activeButton.x + activeButton.width : 0
+                property real leftEdge: targetLeft
+                property real rightEdge: targetRight
+
+                Behavior on leftEdge {
+                    id: leftBehavior
+                    NumberAnimation {
+                        duration: leftBehavior.isTrailing ? highlight.trailDuration : highlight.leadDuration
+                        easing.type: Easing.OutQuart
                     }
-
-                    Kirigami.Icon {
-                        id: playerIcon
-                        anchors.centerIn: parent
-                        width: Kirigami.Units.iconSizes.smallMedium
-                        height: width
-                        source: parent.iconName
-                        color: Kirigami.Theme.textColor
+                    property bool isTrailing: false
+                }
+                Behavior on rightEdge {
+                    id: rightBehavior
+                    NumberAnimation {
+                        duration: rightBehavior.isTrailing ? highlight.trailDuration : highlight.leadDuration
+                        easing.type: Easing.OutQuart
                     }
+                    property bool isTrailing: false
+                }
 
-                    MouseArea {
-                        id: hoverArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: player.viewPlayer(parent.index)
+                Timer {
+                    id: trailingLeftTimer
+                    interval: highlight.trailDelay
+                    onTriggered: highlight.leftEdge = highlight.targetLeft
+                }
+                Timer {
+                    id: trailingRightTimer
+                    interval: highlight.trailDelay
+                    onTriggered: highlight.rightEdge = highlight.targetRight
+                }
+
+                onTargetLeftChanged: {
+                    if (targetLeft < leftEdge) {
+                        trailingLeftTimer.stop()
+                        leftBehavior.isTrailing = false
+                        leftEdge = targetLeft
+                    } else {
+                        leftBehavior.isTrailing = true
+                        trailingLeftTimer.restart()
                     }
+                }
+                onTargetRightChanged: {
+                    if (targetRight > rightEdge) {
+                        trailingRightTimer.stop()
+                        rightBehavior.isTrailing = false
+                        rightEdge = targetRight
+                    } else {
+                        rightBehavior.isTrailing = true
+                        trailingRightTimer.restart()
+                    }
+                }
+            }
 
-                    PlasmaComponents3.ToolTip.text: identity
-                    PlasmaComponents3.ToolTip.delay: Kirigami.Units.toolTipDelay
-                    PlasmaComponents3.ToolTip.visible: hoverArea.containsMouse
+            RowLayout {
+                id: playerRow
+                anchors.fill: parent
+                spacing: Kirigami.Units.smallSpacing
+
+                Repeater {
+                    id: playerRepeater
+                    model: player.mpris2Model
+                    property Item activeItem: null
+                    delegate: Item {
+                        required property string iconName
+                        required property bool isMultiplexer
+                        required property string identity
+                        required property int index
+                        visible: !isMultiplexer
+                        implicitWidth: isMultiplexer ? 0 : playerIcon.width + 10
+                        implicitHeight: isMultiplexer ? 0 : playerIcon.height + 10
+
+                        readonly property bool active: player.currentModelIndex === index
+                            || (player.currentModelIndex === 0 && player.identity === identity)
+                        onActiveChanged: if (active) playerRepeater.activeItem = this
+
+                        Kirigami.Icon {
+                            id: playerIcon
+                            anchors.centerIn: parent
+                            width: Kirigami.Units.iconSizes.smallMedium
+                            height: width
+                            source: parent.iconName
+                            color: Kirigami.Theme.textColor
+                        }
+
+                        MouseArea {
+                            id: hoverArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: player.viewPlayer(parent.index)
+                        }
+
+                        PlasmaComponents3.ToolTip.text: identity
+                        PlasmaComponents3.ToolTip.delay: Kirigami.Units.toolTipDelay
+                        PlasmaComponents3.ToolTip.visible: hoverArea.containsMouse
+                    }
                 }
             }
         }
@@ -182,11 +254,7 @@ Item {
             visible: thumbnailVisible
             Layout.fillWidth: true
             Layout.margins: 10
-            // Use the actual image aspect ratio, fallback to square if not loaded yet
-            readonly property real imageRatio: albumArtNormal.implicitWidth > 0 && albumArtNormal.implicitHeight > 0
-                ? albumArtNormal.implicitWidth / albumArtNormal.implicitHeight
-                : 1.0
-            Layout.preferredHeight: thumbnailVisible ? width / imageRatio : 0
+            Layout.preferredHeight: thumbnailVisible ? width : 0
             color: 'transparent'
 
             PlasmaComponents3.ToolTip {
