@@ -48,6 +48,12 @@ PlasmoidItem {
 
     }
 
+    onExpandedChanged: {
+        if (!expanded) {
+            player.returnToAutoFollow();
+        }
+    }
+
     compactRepresentation: Compact {}
     fullRepresentation: Full {}
 }

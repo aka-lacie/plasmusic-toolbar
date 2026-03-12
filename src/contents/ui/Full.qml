@@ -12,6 +12,9 @@ import Qt5Compat.GraphicalEffects
 Item {
     id: root
 
+    property bool playerSelectorVisible: player.playerCount > 1
+
+
     property string albumPlaceholder: plasmoid.configuration.albumPlaceholder
     property real volumeStep: plasmoid.configuration.volumeStep
     property bool albumCoverBackground: plasmoid.configuration.fullAlbumCoverAsBackground
@@ -118,6 +121,61 @@ Item {
         Kirigami.Theme.inherit: false
         Kirigami.Theme.textColor: albumCoverBackground ? imageColors.fgColor : root._originalTextColor
         Kirigami.Theme.highlightColor: albumCoverBackground ? imageColors.hlColor : root._originalHighlightColor
+
+        RowLayout {
+            id: playerSelector
+            visible: playerSelectorVisible
+            Layout.alignment: Qt.AlignHCenter
+            Layout.topMargin: 4
+            Layout.bottomMargin: 4
+            spacing: Kirigami.Units.smallSpacing
+
+            Repeater {
+                model: player.mpris2Model
+                delegate: Item {
+                    required property string iconName
+                    required property bool isMultiplexer
+                    required property string identity
+                    required property int index
+                    visible: !isMultiplexer
+                    implicitWidth: isMultiplexer ? 0 : playerIcon.width + 10
+                    implicitHeight: isMultiplexer ? 0 : playerIcon.height + 10
+
+                    readonly property bool active: player.currentModelIndex === index
+                        || (player.currentModelIndex === 0 && player.identity === identity)
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Kirigami.Units.cornerRadius
+                        color: "transparent"
+                        border.width: parent.active ? 1 : (hoverArea.containsMouse ? 1 : 0)
+                        border.color: Kirigami.Theme.textColor
+                        opacity: parent.active ? 0.8 : 0.4
+                    }
+
+                    Kirigami.Icon {
+                        id: playerIcon
+                        anchors.centerIn: parent
+                        width: Kirigami.Units.iconSizes.smallMedium
+                        height: width
+                        source: parent.iconName
+                        color: Kirigami.Theme.textColor
+                    }
+
+                    MouseArea {
+                        id: hoverArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: player.viewPlayer(parent.index)
+                    }
+
+                    PlasmaComponents3.ToolTip.text: identity
+                    PlasmaComponents3.ToolTip.delay: Kirigami.Units.toolTipDelay
+                    PlasmaComponents3.ToolTip.visible: hoverArea.containsMouse
+                }
+            }
+        }
 
         Rectangle {
             id: thumbnailContainer
@@ -285,7 +343,13 @@ Item {
                     Layout.alignment: Qt.AlignHCenter
                     size: Kirigami.Units.iconSizes.large
                     source: player.playbackStatus === Mpris.PlaybackStatus.Playing ? "media-playback-pause" : "media-playback-start"
-                    onClicked: player.playPause()
+                    onClicked: {
+                        if (player.playbackStatus === Mpris.PlaybackStatus.Playing) {
+                            player.playPause();
+                        } else {
+                            player.playExclusive();
+                        }
+                    }
                 }
 
                 CommandIcon {

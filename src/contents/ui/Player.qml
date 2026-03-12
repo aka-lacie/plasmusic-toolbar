@@ -8,7 +8,11 @@ QtObject {
     property var mpris2Model: Mpris.Mpris2Model {
         readonly property alias preferredSourceIdentity: root.sourceIdentity
 
-        onRowsInserted: () => updatePlayerIndex(this)
+        onRowsInserted: () => {
+            updatePlayerIndex(this);
+            root._updatePlayerCount();
+        }
+        onRowsRemoved: () => root._updatePlayerCount()
         onPreferredSourceIdentityChanged: () => updatePlayerIndex(this)
 
         function updatePlayerIndex(model) {
@@ -100,5 +104,43 @@ QtObject {
 
     function raise() {
         mpris2Model.currentPlayer.Raise();
+    }
+
+    // Player switching support
+    property int playerCount: 0
+    readonly property int currentModelIndex: mpris2Model.currentIndex
+
+    function _updatePlayerCount() {
+        playerCount = Math.max(0, mpris2Model.rowCount() - 1);
+    }
+
+    function viewPlayer(modelIndex) {
+        mpris2Model.currentIndex = modelIndex;
+    }
+
+    function returnToAutoFollow() {
+        if (!sourceIdentity) {
+            mpris2Model.currentIndex = 0;
+        } else {
+            mpris2Model.updatePlayerIndex(mpris2Model);
+        }
+    }
+
+    function getPlayerAt(modelIndex) {
+        const CONTAINER_ROLE = Qt.UserRole + 1;
+        return mpris2Model.data(mpris2Model.index(modelIndex, 0), CONTAINER_ROLE);
+    }
+
+    // Pause all other players, then play/resume the current one
+    function playExclusive() {
+        const CONTAINER_ROLE = Qt.UserRole + 1;
+        for (let i = 1; i < mpris2Model.rowCount(); i++) {
+            if (i === mpris2Model.currentIndex) continue;
+            const other = mpris2Model.data(mpris2Model.index(i, 0), CONTAINER_ROLE);
+            if (other && other.playbackStatus === Mpris.PlaybackStatus.Playing) {
+                other.Pause();
+            }
+        }
+        mpris2Model.currentPlayer?.Play();
     }
 }
