@@ -86,6 +86,17 @@ Item {
         elideWidth: root.maxWidth
     }
 
+    // Re-establish color bindings on all labels. External tools like Panel
+    // Colorizer walk the QML tree and do `child.color = value` on visible
+    // labels, permanently breaking their declarative binding. This restores
+    // bindings whenever the source color changes or a label becomes visible.
+    function rebindColors() {
+        staticLabel.color = Qt.binding(() => root.textColor)
+        label.color = Qt.binding(() => root.textColor)
+        scrollDuplicate.color = Qt.binding(() => root.textColor)
+    }
+    onTextColorChanged: rebindColors()
+
     // Static label for non-overflowing text, supports horizontal alignment.
     // Hidden when text overflows, where the scrolling label takes over instead.
     PlasmaComponents3.Label {
@@ -96,6 +107,7 @@ Item {
         color: root.textColor
         font: label.font
         horizontalAlignment: root.textAlignment
+        onVisibleChanged: if (visible) color = Qt.binding(() => root.textColor)
     }
 
     PlasmaComponents3.Label {
@@ -104,6 +116,7 @@ Item {
         text: overflow ? (root.overflowElides && !animationRunning ? elidedMetrics.elidedText : root.textAndSpacing) : root.text
         color: root.textColor
         property bool animationRunning: label.x !== 0 || (!animation.paused && animation.running)
+        onVisibleChanged: if (visible) color = Qt.binding(() => root.textColor)
 
         NumberAnimation on x {
             id: animation
@@ -139,6 +152,7 @@ Item {
         }
 
         PlasmaComponents3.Label {
+            id: scrollDuplicate
             visible: root.overflow && label.animationRunning
             anchors.left: parent.right
             color: root.textColor

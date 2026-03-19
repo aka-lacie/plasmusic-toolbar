@@ -39,6 +39,7 @@ KCM.SimpleKCM {
     property alias cfg_albumPosition: albumPosition.value
     property alias cfg_compactTruncatedTextStyle: compactTruncatedTextStyle.value
     property alias cfg_mediaProgressInPanel: mediaProgressInPanel.checked
+    property alias cfg_useAccentColorInPanel: useAccentColorInPanel.checked
     property alias cfg_compactHideAlbumForSingles: compactHideAlbumForSingles.checked
 
     Kirigami.FormLayout {
@@ -492,6 +493,11 @@ KCM.SimpleKCM {
         CheckBox {
             id: mediaProgressInPanel
             Kirigami.FormData.label: i18n("Media progress")
+        }
+
+        CheckBox {
+            id: useAccentColorInPanel
+            Kirigami.FormData.label: i18n("Use accent color for text and controls")
         }
 
         RowLayout {

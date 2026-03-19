@@ -216,9 +216,15 @@ Item {
                         required property bool isMultiplexer
                         required property string identity
                         required property int index
-                        visible: !isMultiplexer
-                        implicitWidth: isMultiplexer ? 0 : playerIcon.width + 10
-                        implicitHeight: isMultiplexer ? 0 : playerIcon.height + 10
+                        readonly property bool hidden: {
+                            if (isMultiplexer) return true;
+                            // Hide non-media MPRIS sources (e.g. image viewers)
+                            var p = player.getPlayerAt(index);
+                            return p && !p.canSeek;
+                        }
+                        visible: !hidden
+                        implicitWidth: hidden ? 0 : playerIcon.width + 10
+                        implicitHeight: hidden ? 0 : playerIcon.height + 10
 
                         readonly property bool active: player.currentModelIndex === index
                             || (player.currentModelIndex === 0 && player.identity === identity)
@@ -229,7 +235,13 @@ Item {
                             anchors.centerIn: parent
                             width: Kirigami.Units.iconSizes.smallMedium
                             height: width
-                            source: parent.iconName
+                            source: {
+                                // Workaround for KDE 6.6.3 returning emblem-music-symbolic
+                                // for all players: resolve icon from desktopEntry instead
+                                var p = player.getPlayerAt(parent.index);
+                                return (p && p.desktopEntry) ? p.desktopEntry : parent.iconName;
+                            }
+                            fallback: parent.iconName
                             color: Kirigami.Theme.textColor
                         }
 

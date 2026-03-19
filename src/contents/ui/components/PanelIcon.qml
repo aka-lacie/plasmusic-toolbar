@@ -16,8 +16,8 @@ Item {
     property var imageRadius: null
     property var icon: null
     property real size: Kirigami.Units.iconSizes.medium
-    property bool imageReady: imageComponent.status == Image.Ready
-    property string imageColor: imageColors.dominant
+    readonly property bool imageReady: imageComponent.status === Image.Ready
+    readonly property string imageColor: imageColors.dominant
     property bool fallbackToIconWhenImageNotAvailable: false
     visible: type === PanelIcon.Type.Icon || imageReady || (fallbackToIconWhenImageNotAvailable && !imageReady)
 
@@ -36,7 +36,9 @@ Item {
         id: imageStatusTimer
         interval: 500
         onTriggered: {
-            imageReady = imageComponent.status === Image.Ready
+            if (imageComponent.status === Image.Ready) {
+                imageColors.update()
+            }
         }
     }
 

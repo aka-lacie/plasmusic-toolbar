@@ -30,14 +30,20 @@ Item {
 
     readonly property bool colorsFromAlbumCover: plasmoid.configuration.colorsFromAlbumCover
     readonly property int panelBackgroundRadius: plasmoid.configuration.panelBackgroundRadius
+
+    // focusColor maps to DecorationFocus in the KDE color scheme, which is the
+    // accent color in all Catppuccin Mocha schemes across every color set
+    // (including Complementary, which panels use by default).
+    readonly property color themeTextColor: plasmoid.configuration.useAccentColorInPanel ? Kirigami.Theme.focusColor : Kirigami.Theme.textColor
+
     readonly property bool useImageColors: panelIcon.imageReady && panelIcon.type == PanelIcon.Type.Image && colorsFromAlbumCover
-    readonly property color imageColor: useImageColors ? panelIcon.imageColor : Kirigami.Theme.textColor
+    readonly property color imageColor: useImageColors ? panelIcon.imageColor : themeTextColor
     readonly property color backgroundColorFromImage: Kirigami.ColorUtils.tintWithAlpha(imageColor, "black", 0.5)
     property color backgroundColor: useImageColors ? backgroundColorFromImage : "transparent"
     readonly property var backgroundColorBrightness: Kirigami.ColorUtils.brightnessForColor(backgroundColor)
     readonly property color contrastColor: backgroundColorBrightness === Kirigami.ColorUtils.Dark ? "white" : "black"
     readonly property color foregroundColorFromImage: Kirigami.ColorUtils.tintWithAlpha(imageColor, contrastColor, .6)
-    property color foregroundColor: useImageColors ? foregroundColorFromImage : Kirigami.Theme.textColor
+    property color foregroundColor: useImageColors ? foregroundColorFromImage : themeTextColor
 
     Behavior on backgroundColor {
         ColorAnimation {
