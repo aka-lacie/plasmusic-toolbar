@@ -31,9 +31,8 @@ Item {
     readonly property bool colorsFromAlbumCover: plasmoid.configuration.colorsFromAlbumCover
     readonly property int panelBackgroundRadius: plasmoid.configuration.panelBackgroundRadius
 
-    // focusColor maps to DecorationFocus in the KDE color scheme, which is the
-    // accent color in all Catppuccin Mocha schemes across every color set
-    // (including Complementary, which panels use by default).
+    // focusColor maps to DecorationFocus in the KDE color scheme, which tracks
+    // the active accent color across color sets, including Complementary.
     readonly property color themeTextColor: plasmoid.configuration.useAccentColorInPanel ? Kirigami.Theme.focusColor : Kirigami.Theme.textColor
 
     readonly property bool useImageColors: panelIcon.imageReady && panelIcon.type == PanelIcon.Type.Image && colorsFromAlbumCover

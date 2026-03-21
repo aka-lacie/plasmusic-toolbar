@@ -10,7 +10,7 @@ PlasMusic Toolbar is a widget for KDE Plasma 6 that shows currently playing song
 </div>
 
 > [!NOTE]
-> This fork includes additional features on top of upstream `ccatterina/plasmusic-toolbar`, including a full-view player switcher for multiple MPRIS players, animated player tabs with layout/panel polish, a compact-view accent color option, and filtering of non-media MPRIS sources from the player selector.
+> This fork includes additional features on top of upstream `ccatterina/plasmusic-toolbar`, including a full-view player switcher for multiple MPRIS players, animated player tabs with layout/panel polish, a compact-view accent color option, filtering of non-media MPRIS sources from the player selector, and a configurable exclusive-playback option for Play/Next/Previous actions.
 
 ## Compatibility
 
