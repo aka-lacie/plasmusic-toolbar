@@ -15,6 +15,7 @@ KCM.SimpleKCM {
     property alias cfg_useCustomFont: customFontCheckbox.checked
     property alias cfg_customFont: fontDialog.fontChosen
     property alias cfg_volumeStep: volumeStepSpinbox.value
+    property alias cfg_exclusivePlayback: exclusivePlayback.checked
     property alias cfg_noMediaText: noMediaText.text
     property alias cfg_showWhenNoMedia: showWhenNoMedia.checked
 
@@ -142,6 +143,20 @@ KCM.SimpleKCM {
             to: 100
             textFromValue: function(text) { return text + "%"; }
             valueFromText: function(value) { return parseInt(value); }
+        }
+
+        RowLayout {
+            Kirigami.FormData.label: i18n("Exclusive playback")
+
+            CheckBox {
+                id: exclusivePlayback
+            }
+
+            Kirigami.ContextualHelpButton {
+                toolTipText: i18n(
+                    "When enabled, Play, Next, and Previous pause other currently playing players if they make this widget's source start or continue playing."
+                )
+            }
         }
     }
 

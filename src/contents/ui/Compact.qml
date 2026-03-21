@@ -93,7 +93,7 @@ Item {
         onClicked: (mouse) => {
             switch (mouse.button) {
             case Qt.MiddleButton:
-                player.playPause()
+                player.previewPlayOrPause()
                 break
             case Qt.BackButton:
                 if (player.canGoPrevious) {
@@ -272,7 +272,7 @@ Item {
                 implicitHeight: compact.controlsSize
                 icon.name: player.playbackStatus === Mpris.PlaybackStatus.Playing ? "media-playback-pause" : "media-playback-start"
                 icon.color: foregroundColor
-                onClicked: player.playPause()
+                onClicked: player.previewPlayOrPause()
             }
 
             PlasmaComponents3.ToolButton {

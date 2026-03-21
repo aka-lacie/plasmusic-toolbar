@@ -65,7 +65,7 @@ Item {
             width: parent.width
             fillMode: Image.PreserveAspectCrop
             placeholderSource: albumPlaceholder
-            imageSource: player.artUrl
+            imageSource: player.fullViewArtUrl
 
             onStatusChanged: {
                 if (status === Image.Ready) {
@@ -218,16 +218,13 @@ Item {
                         required property int index
                         readonly property bool hidden: {
                             if (isMultiplexer) return true;
-                            // Hide non-media MPRIS sources (e.g. image viewers)
-                            var p = player.getPlayerAt(index);
-                            return p && !p.canSeek;
+                            return !player.isBrowsablePlayer(index);
                         }
                         visible: !hidden
                         implicitWidth: hidden ? 0 : playerIcon.width + 10
                         implicitHeight: hidden ? 0 : playerIcon.height + 10
 
-                        readonly property bool active: player.currentModelIndex === index
-                            || (player.currentModelIndex === 0 && player.identity === identity)
+                        readonly property bool active: player.fullViewModelIndex === index
                         onActiveChanged: if (active) playerRepeater.activeItem = this
 
                         Kirigami.Icon {
@@ -272,16 +269,16 @@ Item {
             PlasmaComponents3.ToolTip {
                 id: raisePlayerTooltip
                 anchors.centerIn: parent
-                text: player.canRaise ? i18n("Bring player to the front") : i18n("This player can't be raised")
+                text: player.fullViewCanRaise ? i18n("Bring player to the front") : i18n("This player can't be raised")
                 visible: coverMouseArea.containsMouse
             }
 
             MouseArea {
                 id: coverMouseArea
                 anchors.fill: parent
-                cursorShape: player.canRaise ? Qt.PointingHandCursor : Qt.ArrowCursor
+                cursorShape: player.fullViewCanRaise ? Qt.PointingHandCursor : Qt.ArrowCursor
                 onClicked: {
-                    if (player.canRaise) player.raise()
+                    if (player.fullViewCanRaise) player.fullViewRaise()
                 }
                 hoverEnabled: true
             }
@@ -293,7 +290,7 @@ Item {
                 fillMode: Image.PreserveAspectFit
 
                 placeholderSource: albumPlaceholder
-                imageSource: player.artUrl
+                imageSource: player.fullViewArtUrl
 
                 layer.enabled: root.fullAlbumCoverRounded && root.albumCoverRadius > 0
                 layer.effect: OpacityMask {
@@ -318,9 +315,9 @@ Item {
             Layout.bottomMargin: 5
             textAlignment: songTextAlignment
             scrollingSpeed: plasmoid.configuration.fullViewTextScrollingSpeed
-            title: player.title
-            artists: player.artists
-            album: player.album
+            title: player.fullViewTitle
+            artists: player.fullViewArtists
+            album: player.fullViewAlbum
             textFont: baseFont
             maxWidth: width
             titlePosition: plasmoid.configuration.fullTitlePosition
@@ -332,15 +329,15 @@ Item {
             visible: progressBarVisible
             Layout.leftMargin: 10
             Layout.rightMargin: 10
-            songPosition: player.songPosition
-            songLength: player.songLength
-            playing: player.playbackStatus === Mpris.PlaybackStatus.Playing
-            enableChangePosition: player.canSeek
+            songPosition: player.fullViewSongPosition
+            songLength: player.fullViewSongLength
+            playing: player.fullViewPlaybackStatus === Mpris.PlaybackStatus.Playing
+            enableChangePosition: player.fullViewCanSeek
             onRequireChangePosition: (position) => {
-                player.setPosition(position)
+                player.fullViewSetPosition(position)
             }
             onRequireUpdatePosition: () => {
-                player.updatePosition()
+                player.fullViewUpdatePosition()
             }
         }
 
@@ -354,9 +351,9 @@ Item {
             Layout.topMargin: 5
             textAlignment: songTextAlignment
             scrollingSpeed: plasmoid.configuration.fullViewTextScrollingSpeed
-            title: player.title
-            artists: player.artists
-            album: player.album
+            title: player.fullViewTitle
+            artists: player.fullViewArtists
+            album: player.fullViewAlbum
             textFont: baseFont
             maxWidth: songText.width
             titlePosition: plasmoid.configuration.fullTitlePosition
@@ -370,15 +367,15 @@ Item {
             Layout.leftMargin: 40
             Layout.rightMargin: 40
             Layout.topMargin: 10
-            volume: player.volume
+            volume: player.fullViewVolume
             onSetVolume: (vol) => {
-                player.setVolume(vol)
+                player.fullViewSetVolume(vol)
             }
             onVolumeUp: {
-                player.changeVolume(volumeStep / 100, false)
+                player.fullViewChangeVolume(volumeStep / 100, false)
             }
             onVolumeDown: {
-                player.changeVolume(-volumeStep / 100, false)
+                player.fullViewChangeVolume(-volumeStep / 100, false)
             }
         }
 
@@ -400,61 +397,55 @@ Item {
 
                 CommandIcon {
                     visible: shuffleVisible
-                    enabled: player.canChangeShuffle
+                    enabled: player.fullViewCanChangeShuffle
                     Layout.alignment: Qt.AlignHCenter
                     size: Kirigami.Units.iconSizes.medium
                     source: "media-playlist-shuffle"
-                    onClicked: player.setShuffle(player.shuffle === Mpris.ShuffleStatus.Off ? Mpris.ShuffleStatus.On : Mpris.ShuffleStatus.Off)
-                    active: player.shuffle === Mpris.ShuffleStatus.On
+                    onClicked: player.fullViewSetShuffle(player.fullViewShuffle === Mpris.ShuffleStatus.Off ? Mpris.ShuffleStatus.On : Mpris.ShuffleStatus.Off)
+                    active: player.fullViewShuffle === Mpris.ShuffleStatus.On
                 }
 
                 CommandIcon {
                     visible: playbackControlsVisible
-                    enabled: player.canGoPrevious
+                    enabled: player.fullViewCanGoPrevious
                     Layout.alignment: Qt.AlignHCenter
                     size: Kirigami.Units.iconSizes.medium
                     source: "media-skip-backward"
-                    onClicked: player.previous()
+                    onClicked: player.fullViewPrevious()
                 }
 
                 CommandIcon {
                     visible: playbackControlsVisible
-                    enabled: player.playbackStatus === Mpris.PlaybackStatus.Playing ? player.canPause : player.canPlay
+                    enabled: player.fullViewPlaybackStatus === Mpris.PlaybackStatus.Playing ? player.fullViewCanPause : player.fullViewCanPlay
                     Layout.alignment: Qt.AlignHCenter
                     size: Kirigami.Units.iconSizes.large
-                    source: player.playbackStatus === Mpris.PlaybackStatus.Playing ? "media-playback-pause" : "media-playback-start"
-                    onClicked: {
-                        if (player.playbackStatus === Mpris.PlaybackStatus.Playing) {
-                            player.playPause();
-                        } else {
-                            player.playExclusive();
-                        }
-                    }
+                    source: player.fullViewPlaybackStatus === Mpris.PlaybackStatus.Playing ? "media-playback-pause" : "media-playback-start"
+                    onClicked: player.fullViewPlayOrPause()
                 }
 
                 CommandIcon {
                     visible: playbackControlsVisible
-                    enabled: player.canGoNext
+                    enabled: player.fullViewCanGoNext
                     Layout.alignment: Qt.AlignHCenter
                     size: Kirigami.Units.iconSizes.medium
                     source: "media-skip-forward"
-                    onClicked: player.next()
+                    onClicked: player.fullViewNext()
                 }
 
                 CommandIcon {
                     visible: loopVisible
-                    enabled: player.canChangeLoopStatus
+                    enabled: player.fullViewCanChangeLoopStatus
                     Layout.alignment: Qt.AlignHCenter
                     size: Kirigami.Units.iconSizes.medium
-                    source: player.loopStatus === Mpris.LoopStatus.Track ? "media-playlist-repeat-song" : "media-playlist-repeat"
-                    active: player.loopStatus != Mpris.LoopStatus.None
+                    source: player.fullViewLoopStatus === Mpris.LoopStatus.Track ? "media-playlist-repeat-song" : "media-playlist-repeat"
+                    active: player.fullViewLoopStatus != Mpris.LoopStatus.None
                     onClicked: () => {
                         let status = Mpris.LoopStatus.None;
-                        if (player.loopStatus == Mpris.LoopStatus.None)
+                        if (player.fullViewLoopStatus == Mpris.LoopStatus.None)
                             status = Mpris.LoopStatus.Track;
-                        else if (player.loopStatus === Mpris.LoopStatus.Track)
+                        else if (player.fullViewLoopStatus === Mpris.LoopStatus.Track)
                             status = Mpris.LoopStatus.Playlist;
-                        player.setLoopStatus(status);
+                        player.fullViewSetLoopStatus(status);
                     }
                 }
 

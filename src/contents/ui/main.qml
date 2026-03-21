@@ -36,6 +36,7 @@ PlasmoidItem {
 
     Player {
         id: player
+        exclusivePlayback: plasmoid.configuration.exclusivePlayback
         sourceIdentity: {
             if (!plasmoid.configuration.choosePlayerAutomatically) {
                 return plasmoid.configuration.preferredPlayerIdentity

@@ -63,6 +63,9 @@
         <entry name="volumeStep" type="Int">
             <default>5</default>
         </entry>
+        <entry name="exclusivePlayback" type="Bool">
+            <default>true</default>
+        </entry>
         <entry name="desktopWidgetBg" type="Int">
             <default>1</default>
         </entry>
