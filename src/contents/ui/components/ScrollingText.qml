@@ -1,7 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import Qt5Compat.GraphicalEffects
-import org.kde.plasma.components as PlasmaComponents3
 import org.kde.kirigami as Kirigami
 
 // inspired by https://stackoverflow.com/a/49031115/2568933
@@ -97,24 +96,28 @@ Item {
     }
     onTextColorChanged: rebindColors()
 
-    // Static label for non-overflowing text, supports horizontal alignment.
-    // Hidden when text overflows, where the scrolling label takes over instead.
-    PlasmaComponents3.Label {
+    // Static text for non-overflowing content, supports horizontal alignment.
+    // Hidden when text overflows, where the scrolling text takes over instead.
+    Text {
         id: staticLabel
         visible: !overflow
         anchors.fill: parent
         text: root.text
         color: root.textColor
         font: label.font
+        wrapMode: Text.NoWrap
+        verticalAlignment: Text.AlignVCenter
         horizontalAlignment: root.textAlignment
         onVisibleChanged: if (visible) color = Qt.binding(() => root.textColor)
     }
 
-    PlasmaComponents3.Label {
+    Text {
         id: label
         visible: overflow
         text: overflow ? (root.overflowElides && !animationRunning ? elidedMetrics.elidedText : root.textAndSpacing) : root.text
         color: root.textColor
+        wrapMode: Text.NoWrap
+        anchors.verticalCenter: parent.verticalCenter
         property bool animationRunning: label.x !== 0 || (!animation.paused && animation.running)
         onVisibleChanged: if (visible) color = Qt.binding(() => root.textColor)
 
@@ -151,12 +154,14 @@ Item {
             }
         }
 
-        PlasmaComponents3.Label {
+        Text {
             id: scrollDuplicate
             visible: root.overflow && label.animationRunning
             anchors.left: parent.right
+            anchors.verticalCenter: parent.verticalCenter
             color: root.textColor
             font: label.font
+            wrapMode: Text.NoWrap
             text: label.text
         }
     }
